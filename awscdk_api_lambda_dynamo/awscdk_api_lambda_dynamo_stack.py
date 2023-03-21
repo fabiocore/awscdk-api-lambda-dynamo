@@ -27,7 +27,7 @@ class AwscdkApiLambdaDynamoStack(Stack):
             self,
             "producer_lambda",
             runtime=aws_lambda.Runtime.PYTHON_3_9,
-            handler="producer_lambda.handler",
+            handler="producer_lambda.lambda_handler",
             code=aws_lambda.Code.from_asset("lambda"),
             environment={"DYNAMODB_TABLE": hub_table.table_name},
         )
