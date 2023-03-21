@@ -1,42 +1,34 @@
 import json
 import uuid
-import decimal
 import os
 import boto3
 
-
-# Helper class to convert a DynamoDB item to JSON.
-class DecimalEncoder(json.JSONEncoder):
-    def default(self, o):
-        if isinstance(o, decimal.Decimal):
-            if o % 1 > 0:
-                return float(o)
-            else:
-                return int(o)
-        return super(DecimalEncoder, self).default(o)
-
-
-# Get the service resource.
+# get the service resource.
 dynamodb = boto3.resource("dynamodb")
 
-# set environment variable
+# set ddb environment variable
 TABLE_NAME = os.environ["DYNAMODB_TABLE"]
+table = dynamodb.Table(TABLE_NAME)
 
 
 def lambda_handler(event, context):
-    table = dynamodb.Table(TABLE_NAME)
+    # prepare data
+    pk_id = str(uuid.uuid4())
+    json_data = json.loads(event["body"])
+    json_data.update({"id": pk_id})
+    print("Data to be added to table: ", json_data)
+
     # put item in table
-    response = table.put_item(Item={"id": str(uuid.uuid4())})
+    response = table.put_item(Item=json_data)
+    print("PutItem succeeded:", response)
 
-    print("PutItem succeeded:")
-    print(json.dumps(response, indent=4, cls=DecimalEncoder))
-
+    message = f"New item added to table, with id: {pk_id}"
     return {
         "statusCode": 200,
         "headers": {
             "Content-Type": "application/json",
             "Access-Control-Allow-Origin": "*",
         },
-        "body": json.dumps(response, indent=4, cls=DecimalEncoder),
+        "body": message,
         "isBase64Encoded": False,
     }
