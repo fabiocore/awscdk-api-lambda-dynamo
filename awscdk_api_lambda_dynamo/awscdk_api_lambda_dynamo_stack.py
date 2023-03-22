@@ -2,6 +2,9 @@ from aws_cdk import (
     aws_apigateway as apigw,
     aws_dynamodb,
     aws_lambda,
+    aws_events as events,
+    aws_events_targets as targets,
+    aws_s3 as s3,
     Stack,
     RemovalPolicy,
 )
@@ -40,3 +43,38 @@ class AwscdkApiLambdaDynamoStack(Stack):
 
         endpoint = api.root.add_resource("add")
         endpoint.add_method("POST", apigw.LambdaIntegration(producer_lambda))
+
+        # Reporting
+        # Create a Lambda function that it will trigger every 2 hours interval
+        # The Lambda function will scan the DynamoDB table to count all items and save the results to a S3 bucket
+
+        # Create the S3 bucket
+        bucket = s3.Bucket(self, "hubbucket")
+
+        # Create a lambda function that will count the number of items in the DynamoDB table and save it in a S3 bucket
+        ddb_lambda_report = aws_lambda.Function(
+            self,
+            "ddb_lambda_report",
+            runtime=aws_lambda.Runtime.PYTHON_3_9,
+            handler="ddb_lambda_report.lambda_handler",
+            code=aws_lambda.Code.from_asset("lambda"),
+            environment={
+                "DYNAMODB_TABLE": hub_table.table_name,
+                "S3_BUCKET": bucket.bucket_name,
+            },
+        )
+
+        # Grant the lambda function permission to read from the dynamodb table
+        hub_table.grant_read_data(ddb_lambda_report)
+        # Grant the lambda function permission to write to the S3 bucket
+        bucket.grant_write(ddb_lambda_report)
+
+        # Create a events rule that will trigger the consumer lambda function every 2 hours
+        rule = events.Rule(
+            self,
+            "Rule",
+            schedule=events.Schedule.cron(
+                minute="0", hour="*/2", month="*", week_day="MON-FRI", year="*"
+            ),
+        )
+        rule.add_target(targets.LambdaFunction(ddb_lambda_report))
