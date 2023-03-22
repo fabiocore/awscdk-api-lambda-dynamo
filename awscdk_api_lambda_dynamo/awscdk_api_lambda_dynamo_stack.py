@@ -58,7 +58,10 @@ class AwscdkApiLambdaDynamoStack(Stack):
             runtime=aws_lambda.Runtime.PYTHON_3_9,
             handler="ddb_lambda_report.lambda_handler",
             code=aws_lambda.Code.from_asset("lambda"),
-            environment={"DYNAMODB_TABLE": hub_table.table_name},
+            environment={
+                "DYNAMODB_TABLE": hub_table.table_name,
+                "S3_BUCKET": bucket.bucket_name,
+            },
         )
 
         # Grant the lambda function permission to read from the dynamodb table
