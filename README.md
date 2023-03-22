@@ -1,7 +1,12 @@
 
-# Welcome to your CDK Python project!
+# AWS CDK, API Gateway, Lambda and DynamoDB
 
-This is a blank project for CDK development with Python.
+## Overview
+- This CDK app will create an API Gateway, a Lambda function and a DynamoDB table.
+- The API Gateway will have a "/add" which can be used to send JSON data to be persisted in a DynamoDB table.
+- The Lambda function will generate a unique hash string that will be added as the partition key for each item.
+
+![alt text](./architecture.png "Resources created by CDK")
 
 The `cdk.json` file tells the CDK Toolkit how to execute your app.
 
@@ -46,6 +51,15 @@ $ cdk synth
 To add additional dependencies, for example other CDK libraries, just add
 them to your `setup.py` file and rerun the `pip install -r requirements.txt`
 command.
+
+Testing with curl (example)
+
+```
+ curl -H 'Content-Type: application/json' \
+      -d '{ "message": "Hello, World!", "location": "Brazil"}' \
+      -X POST \
+      https://<change_to_your_endpoint_url>/prod/add
+```
 
 ## Useful commands
 
